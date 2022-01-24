@@ -3,30 +3,39 @@ package com.example.exam_17_2
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.BatteryManager
-import android.os.Bundle
+import android.os.Build
 import android.telephony.SmsMessage
 import android.util.Log
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import java.lang.StringBuilder
-import java.util.*
 
 class MyReceiverSMS : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         // This method is called when the BroadcastReceiver is receiving an Intent broadcast.
-        Log.d("MyReceiver", "")
+        Log.d("MyReceiver", "Action: ${intent.action}")
         val bundle = intent.extras
         if (bundle != null) {
-            val pdus : Array<Object> = bundle.get("pdus") as Array<Object>
-            val size : Int = pdus.size
-            var msgs : MutableList<SmsMessage> = mutableListOf()
+            val pdus = bundle.get("pdus") as Array<*>
+            val size = pdus.size
+            val messages : Array<SmsMessage?> = arrayOfNulls(size)
+            val format = bundle.getString("format")
             val sb = StringBuilder()
-            for (i in 0..size) {
-                msgs.add(i, SmsMessage.createFromPdu(pdus as ByteArray))
-                sb.append(msgs[i].messageBody)
+            for (i in pdus.indices) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    messages[i] = SmsMessage.createFromPdu(pdus[i] as ByteArray, format)
+                }
+                else {
+                    messages[i] = SmsMessage.createFromPdu(pdus[i] as ByteArray)
+                }
+                sb.append(messages[i]?.messageBody)
             }
             val message = sb.toString()
             Log.d("MyReceiver", "SMS message: $message")
+            val textView = (context as AppCompatActivity).findViewById(R.id.textView) as TextView
+            textView.text = message
+
         }
     }
 }
